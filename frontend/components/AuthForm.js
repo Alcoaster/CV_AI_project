@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
+import axios from 'axios';
 
 export default function AuthForm({ isLogin }) {
   const [email, setEmail] = useState('');
@@ -7,10 +8,45 @@ export default function AuthForm({ isLogin }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [username, setUsername] = useState(''); // Заменил email на username
+  const [error, setError] = useState(''); // Для отображения ошибок
+  const [loading, setLoading] = useState(false); // Для индикации загрузки
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => { //всю эту штуку добавил Ник
     e.preventDefault();
-    // Здесь можно добавить логику для отправки данных формы
+    setError('');
+    setLoading(true);
+
+    if (!isLogin && password !== confirmPassword) {
+      setError('Пароли не совпадают');
+      setLoading(false);
+      return;
+    }
+
+    const url = isLogin
+      ? 'http://localhost:3000/login/'
+      : 'http://localhost:3000/register/';
+
+    const data = isLogin
+      ? { username, password }
+      : { username, password_hash: password };
+
+    try {
+      const response = await axios.post(url, data);
+      if (isLogin) {
+        localStorage.setItem('refresh', response.data.refresh);
+        localStorage.setItem('access', response.data.access);
+        console.log('Успешный вход:', response.data);
+      } else {
+        console.log('Успешная регистрация:', response.data);
+      }
+    } catch (err) {
+      setError(
+        err.response?.data?.error || 'Произошла ошибка. Попробуйте снова.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,16 +96,16 @@ export default function AuthForm({ isLogin }) {
         {/* Поле Email */}
         <div>
           <label className="block text-sm font-medium text-[#FFFFFF] mb-1">
-            E-mail
+            Username
           </label>
           <input
-            type="email"
+            type="text"
             className="w-full px-4 py-2 border border-[#000000] rounded-md 
                        hover:bg-[#7C7C7C] hover:border-[#FFFFFF] focus:outline-none
                        focus:bg-[#7C7C7C] focus:border-[#FFFFFF] transition-all duration-200"
-            placeholder="example@mail.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
         </div>
 

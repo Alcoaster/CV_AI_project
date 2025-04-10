@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',  # Добавляем DRF
     'rest_framework_simplejwt',  # Добавляем JWT
+    'corsheaders', #Добавил Никита
     'CV_AI_app',  # Ваше приложение
 ]
 
@@ -59,11 +60,16 @@ SIMPLE_JWT = {
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware', # добавил Никита
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+#разрешаем запросы с фронтенда (добавил Никита)
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # Адрес Next.js
 ]
 
 ROOT_URLCONF = 'CV_AI_Project.urls'
