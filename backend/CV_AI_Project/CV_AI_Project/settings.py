@@ -67,7 +67,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-#разрешаем запросы с фронтенда (добавил Никита)
+#разрешаем запросы с фронтенда 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Адрес Next.js
 ]

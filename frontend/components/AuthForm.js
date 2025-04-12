@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 export default function AuthForm({ isLogin }) {
   const [email, setEmail] = useState('');
@@ -11,8 +12,9 @@ export default function AuthForm({ isLogin }) {
   const [username, setUsername] = useState(''); // Заменил email на username
   const [error, setError] = useState(''); // Для отображения ошибок
   const [loading, setLoading] = useState(false); // Для индикации загрузки
+  const router = useRouter();
 
-  const handleSubmit = async (e) => { //всю эту штуку добавил Ник
+  const handleSubmit = async (e) => { 
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -24,21 +26,24 @@ export default function AuthForm({ isLogin }) {
     }
 
     const url = isLogin
-      ? 'http://localhost:3000/login/'
-      : 'http://localhost:3000/register/';
+      ? 'http://localhost:8000/api/login/'
+      : 'http://localhost:8000/api/register/';
 
     const data = isLogin
       ? { username, password }
       : { username, password_hash: password };
 
     try {
+      console.log('Sending request to:', url, 'with data:', data);
       const response = await axios.post(url, data);
       if (isLogin) {
         localStorage.setItem('refresh', response.data.refresh);
         localStorage.setItem('access', response.data.access);
         console.log('Успешный вход:', response.data);
+        router.push('/');
       } else {
         console.log('Успешная регистрация:', response.data);
+        router.push('/login');
       }
     } catch (err) {
       setError(
@@ -156,11 +161,12 @@ export default function AuthForm({ isLogin }) {
         {/* Кнопка Войти/Зарегистрироваться */}
         <button
           type="submit"
-          className="w-full bg-[#3D3D3D] text-[#FFFFFF] py-2 px-4 rounded-md 
-                     hover:bg-[#292929] 
-                     transition-colors duration-200 cursor-pointer"
+          disabled={loading}
+          className={`w-full bg-[#3D3D3D] text-[#FFFFFF] py-2 px-4 rounded-md 
+          hover:bg-[#292929] transition-colors duration-200 cursor-pointer
+          ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          {isLogin ? 'Войти' : 'Зарегистрироваться'}
+          {loading ? 'Загрузка...' : isLogin ? 'Войти' : 'Зарегистрироваться'}
         </button>
 
         {/* Ссылка на вход/регистрацию */}

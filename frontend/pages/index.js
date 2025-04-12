@@ -1,113 +1,352 @@
-import Image from "next/image";
-import { Geist, Geist_Mono } from "next/font/google";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/router';
 
 export default function Home() {
+  const router = useRouter();
+  const [chats, setChats] = useState([
+    { id: 1, name: 'Чат 1', messages: [] },
+    { id: 2, name: 'Чат 2', messages: [] },
+  ]);
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [showMockInterviewInput, setShowMockInterviewInput] = useState(false);
+  const [userInput, setUserInput] = useState('');
+  const [editingChatId, setEditingChatId] = useState(null);
+  const [editingChatName, setEditingChatName] = useState('');
+  const [selectedResume, setSelectedResume] = useState(null);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false); // Состояние для выпадающего окна
+  const fileInputRef = useRef(null);
+  const profileButtonRef = useRef(null); // Ref для кнопки "Профиль"
+
+  const handleAddChat = () => {
+    const newChat = {
+      id: chats.length ? Math.max(...chats.map((chat) => chat.id)) + 1 : 1,
+      name: `Чат ${chats.length + 1}`,
+      messages: [],
+    };
+    setChats([...chats, newChat]);
+    setCurrentChatId(newChat.id);
+  };
+
+  const handleSelectChat = (chatId) => {
+    setCurrentChatId(chatId);
+    setShowMockInterviewInput(false);
+  };
+
+  const handleDeleteChat = (chatId) => {
+    const updatedChats = chats.filter((chat) => chat.id !== chatId);
+    setChats(updatedChats);
+    if (currentChatId === chatId) {
+      setCurrentChatId(updatedChats.length ? updatedChats[0].id : null);
+      setShowMockInterviewInput(false);
+    }
+  };
+
+  const handleEditChatName = (chatId, currentName) => {
+    setEditingChatId(chatId);
+    setEditingChatName(currentName);
+  };
+
+  const handleSaveChatName = (chatId) => {
+    if (!editingChatName.trim()) return;
+    const updatedChats = chats.map((chat) =>
+      chat.id === chatId ? { ...chat, name: editingChatName } : chat
+    );
+    setChats(updatedChats);
+    setEditingChatId(null);
+    setEditingChatName('');
+  };
+
+  const startMockInterview = () => {
+    if (!currentChatId) return;
+    setShowMockInterviewInput(true);
+    const currentChat = chats.find((chat) => chat.id === currentChatId);
+    if (currentChat.messages.length === 0) {
+      const initialMessage = {
+        sender: 'ai',
+        text: 'Сейчас мы будем проводить мок-интервью. Тебе станет доступна на строках ввода, через которую ты будешь писать свои ответы, я буду задавать тебе вопросы, твоя задача отвечать на них так, как ты бы это сделал на настоящем собеседовании. Хочу уточнить привычки и аналитику. Поначалу оставлю открытым окно вопросов, говорить правду по тому отклику или нет, отмечай, что эксперту было бы интересно. Вопрос 5 вопросов. Добавь совет по тому как улучшить твоё резюме. Первый вопрос: что такое декораторы в Python?',
+      };
+      updateChatMessages(currentChatId, [initialMessage]);
+    }
+  };
+
+  const updateChatMessages = (chatId, messages) => {
+    const updatedChats = chats.map((chat) =>
+      chat.id === chatId ? { ...chat, messages } : chat
+    );
+    setChats(updatedChats);
+  };
+
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!userInput.trim() || !currentChatId) return;
+
+    const newUserMessage = { sender: 'user', text: userInput };
+    const currentChat = chats.find((chat) => chat.id === currentChatId);
+    const updatedMessages = [...currentChat.messages, newUserMessage];
+    updateChatMessages(currentChatId, updatedMessages);
+
+    setTimeout(() => {
+      const aiResponse = {
+        sender: 'ai',
+        text: 'Декораторы в Python позволяют расширять и изменять поведение вызываемых объектов (функций, методов и классов) без постоянного изменения самого кода. Хочешь привести пример декоратора на основе/функции/метода/класса. Второй вопрос: как создать словарь, имея два списка? Первый список будет ключом, второй значением.',
+      };
+      updateChatMessages(currentChatId, [...updatedMessages, aiResponse]);
+    }, 1000);
+
+    setUserInput('');
+  };
+
+  const handleEndInterview = () => {
+    setShowMockInterviewInput(false);
+    const currentChat = chats.find((chat) => chat.id === currentChatId);
+    const finalMessage = {
+      sender: 'ai',
+      text: 'Мок-интервью завершено. Спасибо за участие! Вот мой совет по улучшению твоего резюме: добавь больше конкретных достижений с цифрами, например, "увеличил производительность команды на 20%".',
+    };
+    updateChatMessages(currentChatId, [...currentChat.messages, finalMessage]);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        alert('Пожалуйста, выберите файл в формате PDF.');
+        setSelectedResume(null);
+        e.target.value = null;
+        return;
+      }
+      setSelectedResume(file);
+    }
+  };
+
+  const handleAddResume = () => {
+    fileInputRef.current.click();
+  };
+
+  // Функция для открытия/закрытия выпадающего окна профиля
+  const toggleProfileDropdown = () => {
+    setShowProfileDropdown(!showProfileDropdown);
+  };
+
+  // Функция для перехода на страницу настроек
+  const handleSettings = () => {
+    setShowProfileDropdown(false);
+    router.push('/settings');
+  };
+
+  // Функция для выхода из аккаунта
+  const handleLogout = () => {
+    setShowProfileDropdown(false);
+    router.push('/login'); // Изменено с /api/login на /login
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              pages/index.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="flex h-screen bg-gray-900 text-white">
+      {/* Боковая панель */}
+      <div className="w-64 p-4 bg-gray-800 border-r border-gray-700">
+        <h1 className="text-2xl font-bold mb-4">CV AI</h1>
+        <div className="space-y-2">
+          <div className="relative">
+            <button
+              ref={profileButtonRef}
+              onClick={toggleProfileDropdown}
+              className="w-full py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+            >
+              Профиль
+            </button>
+            {/* Выпадающее окно профиля */}
+            {showProfileDropdown && (
+              <div
+                className="absolute left-full top-0 ml-2 w-48 bg-gray-800 p-4 rounded-lg border border-teal-500 z-50"
+              >
+
+                <div className="space-y-2">
+                  <button
+                    onClick={handleSettings}
+                    className="w-full py-1 px-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    Настройки пользователя
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full py-1 px-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                  >
+                    Выйти из аккаунта
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleAddChat}
+            className="w-full py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Добавить чат
+          </button>
+          <button className="w-full py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+            Автоотклик на вакансии
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="mt-4">
+          <h2 className="text-lg font-semibold mb-2">История чатов:</h2>
+          <div className="space-y-1">
+            {chats.map((chat) => (
+              <div key={chat.id} className="flex items-center space-x-2">
+                {editingChatId === chat.id ? (
+                  <div className="flex-1 flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={editingChatName}
+                      onChange={(e) => setEditingChatName(e.target.value)}
+                      className="flex-1 p-2 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:border-teal-500"
+                    />
+                    <button
+                      onClick={() => handleSaveChatName(chat.id)}
+                      className="p-2 text-teal-500 hover:text-teal-400"
+                    >
+                      Сохранить
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleSelectChat(chat.id)}
+                      className={`flex-1 py-2 px-4 text-left rounded-lg transition-colors ${
+                        currentChatId === chat.id
+                          ? 'bg-gray-600'
+                          : 'bg-gray-700 hover:bg-gray-600'
+                      }`}
+                    >
+                      {chat.name}
+                    </button>
+                    <button
+                      onClick={() => handleEditChatName(chat.id, chat.name)}
+                      className="p-2 text-yellow-500 hover:text-yellow-400"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => handleDeleteChat(chat.id)}
+                      className="p-2 text-red-500 hover:text-red-400"
+                    >
+                      🗑️
+                    </button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Основная область */}
+      <div className="flex-1 flex flex-col">
+        <div className="p-4 border-b border-gray-700">
+          <h2 className="text-lg font-semibold">
+            {currentChatId
+              ? chats.find((chat) => chat.id === currentChatId)?.name
+              : 'Выберите чат'}
+          </h2>
+        </div>
+
+        <div className="flex-1 p-4 overflow-y-auto">
+          {currentChatId ? (
+            (() => {
+              const currentChat = chats.find((chat) => chat.id === currentChatId);
+              return currentChat.messages.length > 0 ? (
+                currentChat.messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`mb-4 p-3 rounded-lg max-w-md ${
+                      message.sender === 'ai'
+                        ? 'bg-gray-700 mr-auto'
+                        : 'bg-teal-600 ml-auto'
+                    }`}
+                  >
+                    <p>{message.text}</p>
+                  </div>
+                ))
+              ) : showMockInterviewInput ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-400">Мок-интервью началось...</p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-gray-400">
+                    {selectedResume
+                      ? `Выбрано резюме: ${selectedResume.name}`
+                      : 'Выберите действие ниже'}
+                  </p>
+                </div>
+              );
+            })()
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-gray-400">Выберите чат или создайте новый</p>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-gray-700">
+          {showMockInterviewInput && currentChatId ? (
+            <div className="flex items-center space-x-2">
+              <form onSubmit={handleSendMessage} className="flex-1 flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  placeholder="Введите ответ..."
+                  className="flex-1 p-2 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:border-teal-500"
+                />
+                <button
+                  type="submit"
+                  className="p-2 bg-teal-600 rounded-lg hover:bg-teal-500 transition-colors"
+                >
+                  Отправить
+                </button>
+              </form>
+              <button
+                onClick={handleEndInterview}
+                className="p-2 bg-red-600 rounded-lg hover:bg-red-500 transition-colors"
+              >
+                Завершить интервью
+              </button>
+            </div>
+          ) : (
+            <div className="flex space-x-2">
+              <div className="relative">
+                <button
+                  onClick={handleAddResume}
+                  className="py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Добавить резюме
+                </button>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </div>
+              <button className="py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                Проанализировать резюме
+              </button>
+              <button className="py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+                Подобрать вакансии
+              </button>
+              <button
+                onClick={startMockInterview}
+                className="py-2 px-4 bg-teal-600 rounded-lg hover:bg-teal-500 transition-colors"
+                disabled={!currentChatId}
+              >
+                Провести мок-интервью
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
