@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useRouter } from 'next/router';
+import { FaCheck, FaTimes, FaEdit, FaTrash } from 'react-icons/fa';
 
 export default function Home() {
   const router = useRouter();
@@ -12,10 +13,11 @@ export default function Home() {
   const [userInput, setUserInput] = useState('');
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingChatName, setEditingChatName] = useState('');
+  const [deletingChatId, setDeletingChatId] = useState(null); // Состояние для режима удаления
   const [selectedResume, setSelectedResume] = useState(null);
-  const [showProfileDropdown, setShowProfileDropdown] = useState(false); // Состояние для выпадающего окна
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const fileInputRef = useRef(null);
-  const profileButtonRef = useRef(null); // Ref для кнопки "Профиль"
+  const profileButtonRef = useRef(null);
 
   const handleAddChat = () => {
     const newChat = {
@@ -39,6 +41,7 @@ export default function Home() {
       setCurrentChatId(updatedChats.length ? updatedChats[0].id : null);
       setShowMockInterviewInput(false);
     }
+    setDeletingChatId(null); // Сбрасываем режим удаления
   };
 
   const handleEditChatName = (chatId, currentName) => {
@@ -54,6 +57,19 @@ export default function Home() {
     setChats(updatedChats);
     setEditingChatId(null);
     setEditingChatName('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingChatId(null);
+    setEditingChatName('');
+  };
+
+  const handleStartDelete = (chatId) => {
+    setDeletingChatId(chatId);
+  };
+
+  const handleCancelDelete = () => {
+    setDeletingChatId(null);
   };
 
   const startMockInterview = () => {
@@ -123,53 +139,48 @@ export default function Home() {
     fileInputRef.current.click();
   };
 
-  // Функция для открытия/закрытия выпадающего окна профиля
   const toggleProfileDropdown = () => {
     setShowProfileDropdown(!showProfileDropdown);
   };
 
-  // Функция для перехода на страницу настроек
   const handleSettings = () => {
     setShowProfileDropdown(false);
     router.push('/settings');
   };
 
-  // Функция для выхода из аккаунта
   const handleLogout = () => {
     setShowProfileDropdown(false);
-    router.push('/login'); // Изменено с /api/login на /login
+    router.push('/login');
   };
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className="flex h-screen bg-[#1E1E1E] text-white">
       {/* Боковая панель */}
-      <div className="w-64 p-4 bg-gray-800 border-r border-gray-700">
-        <h1 className="text-2xl font-bold mb-4">CV AI</h1>
+      <div className="w-64 p-4 bg-[#3D3D3D] border-r border-[#3D3D3D]">
+        <h1 className="text-2xl text-center font-bold mb-4">CV AI</h1>
+        <div className="h-0.5 bg-teal-600 rounded-full mb-4 relative"></div>
         <div className="space-y-2">
           <div className="relative">
             <button
               ref={profileButtonRef}
               onClick={toggleProfileDropdown}
-              className="w-full py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+              className="w-full py-2 px-4 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors cursor-pointer"
             >
               Профиль
             </button>
-            {/* Выпадающее окно профиля */}
             {showProfileDropdown && (
-              <div
-                className="absolute left-full top-0 ml-2 w-48 bg-gray-800 p-4 rounded-lg border border-teal-500 z-50"
-              >
-
+              <div className="absolute left-full top-0 ml-2 w-48 bg-[#3D3D3D] p-4 rounded-lg border border-teal-600 z-50 profile-dropdown">
+                <h2 className="text-lg font-semibold mb-3 text-center">Настройки</h2>
                 <div className="space-y-2">
                   <button
                     onClick={handleSettings}
-                    className="w-full py-1 px-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                    className="w-full py-1 px-2 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors text-sm cursor-pointer"
                   >
                     Настройки пользователя
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="w-full py-1 px-2 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                    className="w-full py-1 px-2 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors text-sm cursor-pointer"
                   >
                     Выйти из аккаунта
                   </button>
@@ -179,60 +190,86 @@ export default function Home() {
           </div>
           <button
             onClick={handleAddChat}
-            className="w-full py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+            className="w-full py-2 px-4 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors cursor-pointer"
           >
             Добавить чат
           </button>
-          <button className="w-full py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+          <button className="w-full py-2 px-4 border border-teal-600 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors cursor-pointer">
             Автоотклик на вакансии
           </button>
         </div>
-
+        
         <div className="mt-4">
           <h2 className="text-lg font-semibold mb-2">История чатов:</h2>
           <div className="space-y-1">
             {chats.map((chat) => (
-              <div key={chat.id} className="flex items-center space-x-2">
+              <div key={chat.id} className="relative">
                 {editingChatId === chat.id ? (
-                  <div className="flex-1 flex items-center space-x-2">
-                    <input
-                      type="text"
+                  <div className="flex items-center space-x-2 w-full">
+                    <textarea
                       value={editingChatName}
                       onChange={(e) => setEditingChatName(e.target.value)}
-                      className="flex-1 p-2 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:border-teal-500"
+                      className="flex-1 p-2 bg-[#3D3D3D] rounded-lg border border-[#4E4E4E] focus:outline-none focus:border-teal-600 min-w-0 "
                     />
                     <button
                       onClick={() => handleSaveChatName(chat.id)}
-                      className="p-2 text-teal-500 hover:text-teal-400"
+                      className="p-2 text-[#AAAAAA] hover:text-[#FFFFFF] flex-shrink-0"
                     >
-                      Сохранить
+                      <FaCheck/>
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-2 text-[#AAAAAA] hover:text-[#FFFFFF] flex-shrink-0"
+                    >
+                      <FaTimes/>
+                    </button>
+                  </div>
+                ) : deletingChatId === chat.id ? (
+                  <div className="relative">
+                    <button
+                      className="w-full py-2 px-4 text-left rounded-lg bg-[#4E4E4E]"
+                      disabled
+                    >
+                      {chat.name}
+                    </button>
+                    <button
+                      onClick={() => handleDeleteChat(chat.id)}
+                      className="absolute right-10 top-1/2 transform -translate-y-1/2 text-[#AAAAAA] hover:text-[#FFFFFF]"
+                    >
+                      <FaCheck/>
+                    </button>
+                    <button
+                      onClick={handleCancelDelete}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#AAAAAA] hover:text-[#FFFFFF]"
+                    >
+                      <FaTimes/>
                     </button>
                   </div>
                 ) : (
-                  <>
+                  <div className="relative">
                     <button
                       onClick={() => handleSelectChat(chat.id)}
-                      className={`flex-1 py-2 px-4 text-left rounded-lg transition-colors ${
+                      className={`w-full py-2 px-2 text-left rounded-lg transition-colors break-words  ${
                         currentChatId === chat.id
-                          ? 'bg-gray-600'
-                          : 'bg-gray-700 hover:bg-gray-600'
+                          ? 'bg-[#4E4E4E]'
+                          : 'bg-[#3D3D3D] hover:bg-[#4E4E4E]'
                       }`}
                     >
                       {chat.name}
                     </button>
                     <button
                       onClick={() => handleEditChatName(chat.id, chat.name)}
-                      className="p-2 text-yellow-500 hover:text-yellow-400"
+                      className="absolute right-10 top-1/2 transform -translate-y-1/2 text-[#AAAAAA] hover:text-[#FFFFFF]"
                     >
-                      ✏️
+                      <FaEdit/>
                     </button>
                     <button
-                      onClick={() => handleDeleteChat(chat.id)}
-                      className="p-2 text-red-500 hover:text-red-400"
+                      onClick={() => handleStartDelete(chat.id)}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[#AAAAAA] hover:text-[#FFFFFF]"
                     >
-                      🗑️
+                      <FaTrash/>
                     </button>
-                  </>
+                  </div>
                 )}
               </div>
             ))}
@@ -242,7 +279,7 @@ export default function Home() {
 
       {/* Основная область */}
       <div className="flex-1 flex flex-col">
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-[#3D3D3D]">
           <h2 className="text-lg font-semibold">
             {currentChatId
               ? chats.find((chat) => chat.id === currentChatId)?.name
@@ -260,7 +297,7 @@ export default function Home() {
                     key={index}
                     className={`mb-4 p-3 rounded-lg max-w-md ${
                       message.sender === 'ai'
-                        ? 'bg-gray-700 mr-auto'
+                        ? 'bg-[#3D3D3D] mr-auto'
                         : 'bg-teal-600 ml-auto'
                     }`}
                   >
@@ -288,37 +325,37 @@ export default function Home() {
           )}
         </div>
 
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-[#3D3D3D] flex justify-center">
           {showMockInterviewInput && currentChatId ? (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 max-w-6xl w-full">
               <form onSubmit={handleSendMessage} className="flex-1 flex items-center space-x-2">
                 <input
                   type="text"
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
                   placeholder="Введите ответ..."
-                  className="flex-1 p-2 bg-gray-700 rounded-lg border border-gray-600 focus:outline-none focus:border-teal-500"
+                  className="flex-1 p-2 bg-[#3D3D3D] rounded-lg border border-[#4E4E4E] focus:outline-none focus:border-teal-600"
                 />
                 <button
                   type="submit"
-                  className="p-2 bg-teal-600 rounded-lg hover:bg-teal-500 transition-colors"
+                  className="p-2 bg-teal-600 rounded-lg hover:bg-teal-500 transition-colors cursor-pointer"
                 >
                   Отправить
                 </button>
               </form>
               <button
                 onClick={handleEndInterview}
-                className="p-2 bg-red-600 rounded-lg hover:bg-red-500 transition-colors"
+                className="p-2 bg-red-600 rounded-lg hover:bg-red-500 transition-colors cursor-pointer"
               >
                 Завершить интервью
               </button>
             </div>
           ) : (
-            <div className="flex space-x-2">
+            <div className="flex items-center space-x-2">
               <div className="relative">
                 <button
                   onClick={handleAddResume}
-                  className="py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors"
+                  className="py-2 px-4 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors cursor-pointer"
                 >
                   Добавить резюме
                 </button>
@@ -330,15 +367,15 @@ export default function Home() {
                   className="hidden"
                 />
               </div>
-              <button className="py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+              <button className="py-2 px-4 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors cursor-pointer">
                 Проанализировать резюме
               </button>
-              <button className="py-2 px-4 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors">
+              <button className="py-2 px-4 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors cursor-pointer">
                 Подобрать вакансии
               </button>
               <button
                 onClick={startMockInterview}
-                className="py-2 px-4 bg-teal-600 rounded-lg hover:bg-teal-500 transition-colors"
+                className="py-2 px-4 bg-teal-600 rounded-lg hover:bg-teal-500 transition-colors cursor-pointer"
                 disabled={!currentChatId}
               >
                 Провести мок-интервью
