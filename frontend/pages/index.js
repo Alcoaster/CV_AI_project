@@ -249,7 +249,7 @@ export default function Home() {
                   <div className="relative">
                     <button
                       onClick={() => handleSelectChat(chat.id)}
-                      className={`w-full py-2 px-2 text-left rounded-lg transition-colors break-words  ${
+                      className={`w-full py-2 px-4 text-left rounded-lg transition-colors break-words  ${
                         currentChatId === chat.id
                           ? 'bg-[#4E4E4E]'
                           : 'bg-[#3D3D3D] hover:bg-[#4E4E4E]'
