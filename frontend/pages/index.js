@@ -181,6 +181,7 @@ export default function Home() {
                   <button
                     onClick={handleLogout}
                     className="w-full py-1 px-2 bg-[#3D3D3D] rounded-lg hover:bg-[#4E4E4E] transition-colors text-sm cursor-pointer"
+                    
                   >
                     Выйти из аккаунта
                   </button>
