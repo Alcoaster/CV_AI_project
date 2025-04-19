@@ -30,8 +30,8 @@ export default function AuthForm({ isLogin }) {
       : 'http://localhost:8000/api/register/';
 
     const data = isLogin
-      ? { username, password }
-      : { username, password_hash: password };
+      ? { firstName, lastName, email, password }
+      : { firstName, lastName, email, password_hash: password };
 
     try {
       console.log('Sending request to:', url, 'with data:', data);
@@ -101,16 +101,16 @@ export default function AuthForm({ isLogin }) {
         {/* Поле Email */}
         <div>
           <label className="block text-sm font-medium text-[#FFFFFF] mb-1">
-            Username
+            email
           </label>
           <input
-            type="text"
+            type="email"
             className="w-full px-4 py-2 border border-[#000000] rounded-md 
                        hover:bg-[#7C7C7C] hover:border-[#FFFFFF] focus:outline-none
                        focus:bg-[#7C7C7C] focus:border-[#FFFFFF] transition-all duration-200"
-            placeholder="username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            placeholder="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
